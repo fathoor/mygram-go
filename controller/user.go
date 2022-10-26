@@ -19,22 +19,42 @@ var (
 func UserRegister(c *gin.Context) {
 	db := database.GetDB()
 	contentType := helper.GetContentType(c)
-	_, _ = db, contentType
 	User := model.User{}
 
 	if contentType == APP_JSON {
-		c.ShouldBindJSON(&User)
+		if err := c.ShouldBindJSON(&User); err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
 	} else {
-		c.ShouldBind(&User)
+		if err := c.ShouldBind(&User); err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
 	}
 
 	err := db.Debug().Create(&User).Error
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Bad Request",
-			"msg":   err.Error(),
-		})
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"users_email_key\"") {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "Conflict",
+				"msg":   "Email already exists",
+			})
+			return
+		} else if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"users_username_key\"") {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "Conflict",
+				"msg":   "Username already exists",
+			})
+			return
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Bad Request",
+				"msg":   err.Error(),
+			})
+		}
+
 		return
 	}
 
@@ -49,13 +69,18 @@ func UserRegister(c *gin.Context) {
 func UserLogin(c *gin.Context) {
 	db := database.GetDB()
 	contentType := helper.GetContentType(c)
-	_, _ = db, contentType
 	User := model.User{}
 
 	if contentType == APP_JSON {
-		c.ShouldBindJSON(&User)
+		if err := c.ShouldBindJSON(&User); err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
 	} else {
-		c.ShouldBind(&User)
+		if err := c.ShouldBind(&User); err != nil {
+			c.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
 	}
 
 	password := User.Password
