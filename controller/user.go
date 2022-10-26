@@ -115,7 +115,6 @@ func UserUpdate(c *gin.Context) {
 	auth := c.MustGet("auth").(jwt.MapClaims)
 	contentType := helper.GetContentType(c)
 	User := model.User{}
-
 	userId, _ := strconv.Atoi(c.Param("userId"))
 	UserId := uint(auth["id"].(float64))
 
@@ -172,5 +171,34 @@ func UserUpdate(c *gin.Context) {
 		"username":   User.Username,
 		"age":        User.Age,
 		"updated_at": User.UpdatedAt,
+	})
+}
+
+func UserDelete(c *gin.Context) {
+	db := database.GetDB()
+	auth := c.MustGet("auth").(jwt.MapClaims)
+	User := model.User{}
+	UserId := uint(auth["id"].(float64))
+
+	User.ID = UserId
+
+	err := db.Debug().Model(&User).Where("id = ?", UserId).Unscoped().Delete(&User).Error
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Bad Request",
+			"msg":   err.Error(),
+		})
+		return
+	} else if db.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Not Found",
+			"msg":   "User not found",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Your account has been successfully deleted",
 	})
 }
