@@ -15,7 +15,7 @@ var (
 	DB_HOST     = os.Getenv("DB_HOST")
 	DB_PORT     = os.Getenv("DB_PORT")
 	DB_USER     = os.Getenv("DB_USER")
-	DB_PASS     = os.Getenv("DB_PASS")
+	DB_PASSWORD = os.Getenv("DB_PASSWORD")
 	DB_NAME     = os.Getenv("DB_NAME")
 	DB_SSL_MODE = os.Getenv("DB_SSL_MODE")
 	APP_HOST    = os.Getenv("APP_HOST")
@@ -26,7 +26,7 @@ var (
 )
 
 func StartDB() {
-	dsn := "host=" + DB_HOST + " user=" + DB_USER + " password=" + DB_PASS + " dbname=" + DB_NAME + " port=" + DB_PORT + " sslmode=" + DB_SSL_MODE + " TimeZone=Asia/Jakarta"
+	dsn := "host=" + DB_HOST + " user=" + DB_USER + " password=" + DB_PASSWORD + " dbname=" + DB_NAME + " port=" + DB_PORT + " sslmode=" + DB_SSL_MODE + " TimeZone=Asia/Jakarta"
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
