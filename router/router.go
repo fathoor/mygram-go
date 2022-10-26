@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/fathoor/mygram-go/controller"
+	"github.com/fathoor/mygram-go/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,6 +13,7 @@ func StartApp() *gin.Engine {
 	{
 		userRouter.POST("/register", controller.UserRegister)
 		userRouter.POST("/login", controller.UserLogin)
+		userRouter.PUT("/:userId", middleware.Authentication(), controller.UserUpdate)
 	}
 
 	return r
