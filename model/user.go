@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/asaskevich/govalidator"
+	"github.com/fathoor/mygram-go/helper"
 	"gorm.io/gorm"
 )
 
@@ -20,7 +21,7 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 		return e
 	}
 
-	// hash password
+	u.Password = helper.HashPassword(u.Password)
 
 	return
 }
@@ -32,7 +33,7 @@ func (u *User) BeforeUpdate(tx *gorm.DB) (err error) {
 		return e
 	}
 
-	// hash password
+	u.Password = helper.HashPassword(u.Password)
 
 	return
 }
