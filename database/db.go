@@ -20,7 +20,6 @@ var (
 	DB_SSL_MODE = os.Getenv("DB_SSL_MODE")
 	APP_HOST    = os.Getenv("APP_HOST")
 	APP_PORT    = os.Getenv("APP_PORT")
-	JWT_SECRET  = os.Getenv("JWT_SECRET")
 	db          *gorm.DB
 	err         error
 )
