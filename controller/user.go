@@ -2,7 +2,10 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/fathoor/mygram-go/database"
 	"github.com/fathoor/mygram-go/helper"
 	"github.com/fathoor/mygram-go/model"
@@ -79,5 +82,70 @@ func UserLogin(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
+	})
+}
+
+func UserUpdate(c *gin.Context) {
+	db := database.GetDB()
+	auth := c.MustGet("auth").(jwt.MapClaims)
+	contentType := helper.GetContentType(c)
+	User := model.User{}
+
+	userId, _ := strconv.Atoi(c.Param("userId"))
+	UserId := uint(auth["id"].(float64))
+
+	User.ID = UserId
+
+	if contentType == APP_JSON {
+		if err := c.ShouldBindJSON(&User); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+	} else {
+		if err := c.ShouldBind(&User); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, err)
+			return
+		}
+	}
+
+	if userId != int(UserId) {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Unauthorized",
+			"msg":   "You can't update other user",
+		})
+		return
+	}
+
+	err := db.Debug().Model(&User).Where("id = ?", userId).Updates(&User).Error
+
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"users_email_key\"") {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "Conflict",
+				"msg":   "Email already exists",
+			})
+			return
+		} else if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"users_username_key\"") {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "Conflict",
+				"msg":   "Username already exists",
+			})
+			return
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Bad Request",
+				"msg":   err.Error(),
+			})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":         User.ID,
+		"email":      User.Email,
+		"username":   User.Username,
+		"age":        User.Age,
+		"updated_at": User.UpdatedAt,
 	})
 }
