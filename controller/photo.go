@@ -132,3 +132,28 @@ func PhotoUpdate(c *gin.Context) {
 		"updated_at": Photo.UpdatedAt,
 	})
 }
+
+func PhotoDelete(c *gin.Context) {
+	db := database.GetDB()
+	auth := c.MustGet("auth").(jwt.MapClaims)
+	userId := int(auth["id"].(float64))
+	photoId, _ := strconv.Atoi(c.Param("photoId"))
+	Photo := model.Photo{}
+
+	Photo.ID = uint(photoId)
+	Photo.UserId = userId
+
+	err := db.Debug().Where("id = ? AND user_id = ?", photoId, userId).Delete(&Photo).Error
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Bad Request",
+			"msg":   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Your photo has been successfully deleted",
+	})
+}
