@@ -200,7 +200,7 @@ func UserDelete(c *gin.Context) {
 	User := model.User{}
 	UserId := uint(auth["id"].(float64))
 
-	err := db.Debug().Unscoped().Model(&User).Where("id = ?", UserId).Delete(&User).Error
+	err := db.Debug().Model(&User).Where("id = ?", UserId).Delete(&User).Error
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
