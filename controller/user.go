@@ -140,7 +140,7 @@ func UserUpdate(c *gin.Context) {
 		return
 	}
 
-	err := db.Debug().Model(&User).Where("id = ?", userId).Updates(&User).Error
+	err := db.Debug().Model(&User).Where("id = ?", userId).Updates(&User).Select("age").Scan(&User.Age).Error
 
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"users_email_key\"") {
@@ -182,18 +182,12 @@ func UserDelete(c *gin.Context) {
 
 	User.ID = UserId
 
-	err := db.Debug().Model(&User).Where("id = ?", UserId).Unscoped().Delete(&User).Error
+	err := db.Debug().Model(&User).Where("id = ?", UserId).Delete(&User).Error
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Bad Request",
 			"msg":   err.Error(),
-		})
-		return
-	} else if db.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Not Found",
-			"msg":   "User not found",
 		})
 		return
 	}
