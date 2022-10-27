@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/fathoor/mygram-go/database"
@@ -20,13 +21,23 @@ func CommentCreate(c *gin.Context) {
 
 	if contentType == APP_JSON {
 		if err := c.ShouldBindJSON(&Comment); err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
-			return
+			if strings.Contains(err.Error(), "ParseInt") {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": "Bad Request",
+					"msg":   "Photo ID must be a number",
+				})
+				return
+			}
 		}
 	} else {
 		if err := c.ShouldBind(&Comment); err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
-			return
+			if strings.Contains(err.Error(), "ParseInt") {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": "Bad Request",
+					"msg":   "Photo ID must be a number",
+				})
+				return
+			}
 		}
 	}
 
@@ -146,9 +157,6 @@ func CommentDelete(c *gin.Context) {
 	userId := int(auth["id"].(float64))
 	commentId, _ := strconv.Atoi(c.Param("commentId"))
 	Comment := model.Comment{}
-
-	Comment.ID = uint(commentId)
-	Comment.UserId = userId
 
 	err := db.Debug().Where("id = ? AND user_id = ?", commentId, userId).Delete(&Comment).Error
 

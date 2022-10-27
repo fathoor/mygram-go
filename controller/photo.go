@@ -70,21 +70,21 @@ func PhotoGetAll(c *gin.Context) {
 	}
 
 	for i := range Photos {
-		User := make(map[string]interface{})
-		User["email"] = Photos[i].User.Email
-		User["username"] = Photos[i].User.Username
+		User := gin.H{
+			"email":    Photos[i].User.Email,
+			"username": Photos[i].User.Username,
+		}
 
-		Photo := make(map[string]interface{})
-		Photo["id"] = Photos[i].ID
-		Photo["title"] = Photos[i].Title
-		Photo["caption"] = Photos[i].Caption
-		Photo["photo_url"] = Photos[i].PhotoUrl
-		Photo["user_id"] = Photos[i].UserId
-		Photo["created_at"] = Photos[i].CreatedAt
-		Photo["updated_at"] = Photos[i].UpdatedAt
-		Photo["User"] = User
-
-		Data = append(Data, Photo)
+		Data = append(Data, gin.H{
+			"id":         Photos[i].ID,
+			"title":      Photos[i].Title,
+			"caption":    Photos[i].Caption,
+			"photo_url":  Photos[i].PhotoUrl,
+			"user_id":    Photos[i].UserId,
+			"created_at": Photos[i].CreatedAt,
+			"updated_at": Photos[i].UpdatedAt,
+			"User":       User,
+		})
 	}
 
 	c.JSON(http.StatusOK, Data)
@@ -98,9 +98,6 @@ func PhotoUpdate(c *gin.Context) {
 	photoId, _ := strconv.Atoi(c.Param("photoId"))
 	Photo := model.Photo{}
 
-	Photo.ID = uint(photoId)
-	Photo.UserId = userId
-
 	if contentType == APP_JSON {
 		if err := c.ShouldBindJSON(&Photo); err != nil {
 			c.AbortWithError(http.StatusBadRequest, err)
@@ -112,6 +109,9 @@ func PhotoUpdate(c *gin.Context) {
 			return
 		}
 	}
+
+	Photo.ID = uint(photoId)
+	Photo.UserId = userId
 
 	err := db.Debug().Model(&Photo).Where("id = ? AND user_id = ?", photoId, userId).Updates(model.Photo{Title: Photo.Title, Caption: Photo.Caption, PhotoUrl: Photo.PhotoUrl}).Error
 
@@ -139,9 +139,6 @@ func PhotoDelete(c *gin.Context) {
 	userId := int(auth["id"].(float64))
 	photoId, _ := strconv.Atoi(c.Param("photoId"))
 	Photo := model.Photo{}
-
-	Photo.ID = uint(photoId)
-	Photo.UserId = userId
 
 	err := db.Debug().Where("id = ? AND user_id = ?", photoId, userId).Delete(&Photo).Error
 

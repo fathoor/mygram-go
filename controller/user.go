@@ -200,8 +200,6 @@ func UserDelete(c *gin.Context) {
 	User := model.User{}
 	UserId := uint(auth["id"].(float64))
 
-	User.ID = UserId
-
 	err := db.Debug().Unscoped().Model(&User).Where("id = ?", UserId).Delete(&User).Error
 
 	if err != nil {
