@@ -85,3 +85,41 @@ func CommentAuthorization() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func SocialMediaAuthorization() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		db := database.GetDB()
+		socialMediaId, err := strconv.Atoi(c.Param("socialMediaId"))
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"error": "Bad Request",
+				"msg":   "Invalid social media id",
+			})
+			return
+		}
+
+		auth := c.MustGet("auth").(jwt.MapClaims)
+		userId := int(auth["id"].(float64))
+		SocialMedia := model.SocialMedia{}
+
+		err = db.Debug().Select("user_id").First(&SocialMedia, socialMediaId).Error
+
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
+				"error": "Not Found",
+				"msg":   "Social media not found",
+			})
+			return
+		}
+
+		if SocialMedia.UserId != userId {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "Unauthorized",
+				"msg":   "You are not authorized to access this social media",
+			})
+			return
+		}
+
+		c.Next()
+	}
+}
