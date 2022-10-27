@@ -1,6 +1,8 @@
 package model
 
 import (
+	"errors"
+
 	"github.com/asaskevich/govalidator"
 	"gorm.io/gorm"
 )
@@ -25,10 +27,15 @@ func (p *Photo) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 func (p *Photo) BeforeUpdate(tx *gorm.DB) (err error) {
-	_, e := govalidator.ValidateStruct(p)
-
-	if e != nil {
-		return e
+	if p.Title == "" && p.PhotoUrl == "" {
+		err = errors.New("title and url is required")
+		return
+	} else if p.Title == "" {
+		err = errors.New("title is required")
+		return
+	} else if p.PhotoUrl == "" {
+		err = errors.New("url is required")
+		return
 	}
 
 	return
