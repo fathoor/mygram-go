@@ -50,3 +50,41 @@ func PhotoCreate(c *gin.Context) {
 		"created_at": Photo.CreatedAt,
 	})
 }
+
+func PhotoGetAll(c *gin.Context) {
+	db := database.GetDB()
+	var (
+		Photos []model.Photo
+		Data   []interface{}
+	)
+
+	err := db.Debug().Preload("User").Find(&Photos).Error
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Bad Request",
+			"msg":   err.Error(),
+		})
+		return
+	}
+
+	for i := range Photos {
+		User := make(map[string]interface{})
+		User["email"] = Photos[i].User.Email
+		User["username"] = Photos[i].User.Username
+
+		Photo := make(map[string]interface{})
+		Photo["id"] = Photos[i].ID
+		Photo["title"] = Photos[i].Title
+		Photo["caption"] = Photos[i].Caption
+		Photo["photo_url"] = Photos[i].PhotoUrl
+		Photo["user_id"] = Photos[i].UserId
+		Photo["created_at"] = Photos[i].CreatedAt
+		Photo["updated_at"] = Photos[i].UpdatedAt
+		Photo["User"] = User
+
+		Data = append(Data, Photo)
+	}
+
+	c.JSON(http.StatusOK, Data)
+}
