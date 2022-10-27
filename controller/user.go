@@ -12,9 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var (
-	APP_JSON = "application/json"
-)
+var APP_JSON = "application/json"
 
 func UserRegister(c *gin.Context) {
 	db := database.GetDB()
@@ -23,13 +21,29 @@ func UserRegister(c *gin.Context) {
 
 	if contentType == APP_JSON {
 		if err := c.ShouldBindJSON(&User); err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
-			return
+			if strings.Contains(err.Error(), "ParseInt") {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": "Bad Request",
+					"msg":   "Age must be number",
+				})
+				return
+			} else {
+				c.AbortWithError(http.StatusBadRequest, err)
+				return
+			}
 		}
 	} else {
 		if err := c.ShouldBind(&User); err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
-			return
+			if strings.Contains(err.Error(), "ParseInt") {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": "Bad Request",
+					"msg":   "Age must be number",
+				})
+				return
+			} else {
+				c.AbortWithError(http.StatusBadRequest, err)
+				return
+			}
 		}
 	}
 
@@ -54,7 +68,6 @@ func UserRegister(c *gin.Context) {
 				"msg":   err.Error(),
 			})
 		}
-
 		return
 	}
 
@@ -88,17 +101,17 @@ func UserLogin(c *gin.Context) {
 	err := db.Debug().Where("email = ?", User.Email).Take(&User).Error
 
 	if err != nil {
+		if strings.Contains(err.Error(), "record not found") {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Unauthorized",
+				"msg":   "Email is not registered",
+			})
+			return
+		}
+	} else if !helper.ComparePassword([]byte(User.Password), []byte(password)) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Unauthorized",
-			"msg":   "Email or password is wrong",
-		})
-		return
-	}
-
-	if !helper.ComparePassword([]byte(User.Password), []byte(password)) {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-			"msg":   "Wrong password",
+			"msg":   "Password is incorrect",
 		})
 		return
 	}
@@ -115,22 +128,30 @@ func UserUpdate(c *gin.Context) {
 	auth := c.MustGet("auth").(jwt.MapClaims)
 	contentType := helper.GetContentType(c)
 	User := model.User{}
-	userId, _ := strconv.Atoi(c.Param("userId"))
 	UserId := uint(auth["id"].(float64))
 
-	User.ID = UserId
+	userId, e := strconv.Atoi(c.Param("userId"))
+	if e != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Bad Request",
+			"msg":   "Invalid user id",
+		})
+		return
+	}
 
 	if contentType == APP_JSON {
 		if err := c.ShouldBindJSON(&User); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, err)
+			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
 	} else {
 		if err := c.ShouldBind(&User); err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, err)
+			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
 	}
+
+	User.ID = UserId
 
 	if userId != int(UserId) {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -161,7 +182,6 @@ func UserUpdate(c *gin.Context) {
 				"msg":   err.Error(),
 			})
 		}
-
 		return
 	}
 
@@ -182,7 +202,7 @@ func UserDelete(c *gin.Context) {
 
 	User.ID = UserId
 
-	err := db.Debug().Model(&User).Where("id = ?", UserId).Delete(&User).Error
+	err := db.Debug().Unscoped().Model(&User).Where("id = ?", UserId).Delete(&User).Error
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
