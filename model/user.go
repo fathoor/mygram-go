@@ -38,6 +38,9 @@ func (u *User) BeforeUpdate(tx *gorm.DB) (err error) {
 	} else if u.Email == "" && u.Username == "" {
 		err = errors.New("email and password is required")
 		return
+	} else if !govalidator.IsEmail(u.Email) {
+		err = errors.New("email is not valid")
+		return
 	}
 
 	return
